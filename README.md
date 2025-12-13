@@ -1,6 +1,6 @@
 # Building a High-Performance RAG Solution with Pgvectorscale and Python
 
-This tutorial will guide you through setting up and using `pgvectorscale` with Docker and Python, leveraging OpenAI's powerful `text-embedding-3-small` model for embeddings. You'll learn to build a cutting-edge RAG (Retrieval-Augmented Generation) solution, combining advanced retrieval techniques (including hybrid search) with intelligent answer generation based on the retrieved context. Perfect for AI engineers looking to enhance their projects with state-of-the-art vector search and generation capabilities with the power of PostgreSQL.
+This tutorial guides you through setting up and using `pgvectorscale` with Docker and Python, leveraging **Infini-AI's bge-m3 model** for embeddings. You'll build a cutting-edge RAG (Retrieval-Augmented Generation) solution, combining advanced retrieval techniques (including hybrid search) with intelligent answer generation based on retrieved context. Perfect for AI engineers looking to enhance their projects with state-of-the-art vector search and generation capabilities using PostgreSQL.
 
 ## YouTube Tutorial
 You can watch the full tutorial here on [YouTube](https://youtu.be/hAdEuDBN57g).
@@ -21,7 +21,7 @@ Using PostgreSQL with pgvectorscale as your vector database offers several key a
 - PostgreSQL is a robust, open-source database with a rich ecosystem of tools, drivers, and connectors. This ensures transparency, community support, and continuous improvements.
 
 - By using PostgreSQL, you can manage both your relational and vector data within a single database. This reduces operational complexity, as there's no need to maintain and synchronize multiple databases.
-◊◊
+
 - Pgvectorscale enhances pgvector with faster search capabilities, higher recall, and efficient time-based filtering. It leverages advanced indexing techniques, such as the DiskANN-inspired index, to significantly speed up Approximate Nearest Neighbor (ANN) searches.
 
 Pgvectorscale Vector builds on top of [pgvector](https://github.com/pgvector/pgvector), offering improved performance and additional features, making PostgreSQL a powerful and versatile choice for AI applications.
@@ -30,21 +30,21 @@ Pgvectorscale Vector builds on top of [pgvector](https://github.com/pgvector/pgv
 
 - Docker
 - Python 3.7+
-- OpenAI API key
-- PostgreSQL GUI client
+- **Infini-AI API key** (sign up at [Infini-AI](https://cloud.infini-ai.com))
+- PostgreSQL GUI client (optional, e.g., TablePlus, DBeaver, or psql CLI)
 
 ## Steps
 
 1. Set up Docker environment
-2. Connect to the database using a PostgreSQL GUI client (I use TablePlus)
-3. Create a Python script to insert document chunks as vectors using OpenAI embeddings
+2. Connect to the database using a PostgreSQL GUI client
+3. Create a Python script to insert document chunks as vectors using bge-m3 embeddings
 4. Create a Python function to perform similarity search
 
 ## Detailed Instructions
 
 ### 1. Set up Docker environment
 
-Create a `docker-compose.yml` file with the following content:
+The project includes a `docker-compose.yml` file in the `docker/` directory:
 
 ```yaml
 services:
@@ -67,44 +67,157 @@ volumes:
 Run the Docker container:
 
 ```bash
-docker compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 ```
 
-### 2. Connect to the database using a PostgreSQL GUI client
+### 2. Connect to the database
 
-- Open client
-- Create a new connection with the following details:
-  - Host: localhost
-  - Port: 5432
-  - User: postgres
-  - Password: password
-  - Database: postgres
+You can connect using any PostgreSQL client:
 
-### 3. Create a Python script to insert document chunks as vectors
+- **Host**: 127.0.0.1 (use this instead of localhost on some systems)
+- **Port**: 5432
+- **User**: postgres
+- **Password**: password
+- **Database**: postgres
 
-See `insert_vectors.py` for the implementation. This script uses OpenAI's `text-embedding-3-small` model to generate embeddings.
+### 3. Configure environment variables
 
-### 4. Create a Python function to perform similarity search
+Copy the example environment file and update it:
 
-See `similarity_search.py` for the implementation. This script also uses OpenAI's `text-embedding-3-small` model for query embedding.
+```bash
+cp app/example.env app/.env
+```
 
-## Usage
+Edit `app/.env` and add your Infini-AI API key:
 
-1. Create a copy of `example.env` and rename it to `.env`
-2. Open `.env` and fill in your OpenAI API key. Leave the database settings as is
-3. Run the Docker container
-4. Install the required Python packages using `pip install -r requirements.txt`
-5. Execute `insert_vectors.py` to populate the database
-6. Play with `similarity_search.py` to perform similarity searches
+```env
+# Database configuration
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=password
 
-## Using ANN search indexes to speed up queries
+# Infini-AI configuration
+INFINI_API_KEY=your_infini_ai_api_key_here
+INFINI_BASE_URL=https://cloud.infini-ai.com/maas/v1
+EMBEDDING_MODEL=bge-m3
+EMBEDDING_DIMENSIONS=1024
+LLM_MODEL=deepseek-ai/DeepSeek-V3
+```
+
+### 4. Install Python dependencies
+
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+Install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Insert vectors into the database
+
+Run the vector insertion script:
+
+```bash
+python app/insert_vectors.py
+```
+
+This script will:
+- Load FAQ data from `data/faq_dataset.csv`
+- Generate embeddings using the bge-m3 model (1024 dimensions)
+- Insert vectors into the PostgreSQL database
+
+### 6. Perform similarity searches
+
+Run the similarity search script:
+
+```bash
+python app/similarity_search.py
+```
+
+This script demonstrates:
+- Basic similarity search
+- Metadata filtering
+- Time-based filtering
+- LLM-powered response generation
+
+## Project Structure
+
+```
+.
+├── app/
+│   ├── config/
+│   │   └── settings.py          # Configuration and environment loading
+│   ├── database/
+│   │   ├── connect_postgres.py  # Database connection utilities
+│   │   └── vector_store.py      # Vector store operations
+│   ├── services/
+│   │   ├── llm_factory.py       # LLM client factory
+│   │   └── synthesizer.py       # Response synthesis
+│   ├── insert_vectors.py        # Insert vectors into database
+│   └── similarity_search.py     # Perform similarity searches
+├── data/
+│   └── faq_dataset.csv          # Sample FAQ data
+├── docker/
+│   └── docker-compose.yml       # Docker configuration
+├── requirements.txt             # Python dependencies
+└── README.md                    # This file
+```
+
+## Key Features
+
+### 1. **Vector Search with Metadata Filtering**
+   - Search by semantic similarity
+   - Filter by metadata (e.g., category, date)
+   - Time-range filtering for temporal data
+
+### 2. **LLM-Powered Response Generation**
+   - Uses Infini-AI's DeepSeek-V3 model
+   - Context-aware answer synthesis
+   - Thought process transparency
+
+### 3. **High-Performance Indexing**
+   - Timescale Vector's DiskANN-inspired index
+   - Optimized for large-scale vector datasets
+   - Efficient approximate nearest neighbor search
+
+## Troubleshooting & Known Issues
+
+### 1. **Database Connection Issues**
+   - **Problem**: Connection fails with "localhost"
+   - **Solution**: Use `127.0.0.1` instead of `localhost` in your configuration
+
+### 2. **Environment Variables Not Loading**
+   - **Problem**: `.env` file not being read
+   - **Solution**: Ensure the `.env` file is in the `app/` directory, not the project root
+
+### 3. **Vector Dimension Mismatch**
+   - **Problem**: "vector dimension mismatch" error
+   - **Solution**: The bge-m3 model uses 1024 dimensions, not 1536. Update your configuration accordingly
+
+### 4. **Predicates Bug in timescale_vector**
+   - **Problem**: `TypeError: Subscripted generics cannot be used with class and instance checks`
+   - **Solution**: This is a bug in `timescale_vector` v0.0.7 with Python 3.9. Use `metadata_filter` instead of `Predicates` for filtering. The demo code in `similarity_search.py` has been commented out.
+
+### 5. **Infini-AI API Configuration**
+   - **Problem**: API calls failing
+   - **Solution**: Ensure your API key is correct and the base URL is set to `https://cloud.infini-ai.com/maas/v1`
+
+## Using ANN Search Indexes
 
 Timescale Vector offers indexing options to accelerate similarity queries, particularly beneficial for large vector datasets (10k+ vectors):
 
-1. Supported indexes:
-   - timescale_vector_index (default): A DiskANN-inspired graph index
-   - pgvector's HNSW: Hierarchical Navigable Small World graph index
-   - pgvector's IVFFLAT: Inverted file index
+1. **Supported indexes**:
+   - `timescale_vector_index` (default): A DiskANN-inspired graph index
+   - `pgvector's HNSW`: Hierarchical Navigable Small World graph index
+   - `pgvector's IVFFLAT`: Inverted file index
 
 2. The DiskANN-inspired index is Timescale's latest offering, providing improved performance. Refer to the [Timescale Vector explainer blog](https://www.timescale.com/blog/pgvector-is-now-as-fast-as-pinecone-at-75-less-cost/) for detailed information and benchmarks.
 
@@ -116,19 +229,19 @@ For optimal query performance, creating an index on the embedding column is reco
 
 Cosine similarity measures the cosine of the angle between two vectors in a multi-dimensional space. It's a measure of orientation rather than magnitude.
 
-- Range: -1 to 1 (for normalized vectors, which is typical in text embeddings)
-- 1: Vectors point in the same direction (most similar)
-- 0: Vectors are orthogonal (unrelated)
-- -1: Vectors point in opposite directions (most dissimilar)
+- **Range**: -1 to 1 (for normalized vectors, which is typical in text embeddings)
+- **1**: Vectors point in the same direction (most similar)
+- **0**: Vectors are orthogonal (unrelated)
+- **-1**: Vectors point in opposite directions (most dissimilar)
 
 ### Cosine Distance
 
 In pgvector, the `<=>` operator computes cosine distance, which is 1 - cosine similarity.
 
-- Range: 0 to 2
-- 0: Identical vectors (most similar)
-- 1: Orthogonal vectors
-- 2: Opposite vectors (most dissimilar)
+- **Range**: 0 to 2
+- **0**: Identical vectors (most similar)
+- **1**: Orthogonal vectors
+- **2**: Opposite vectors (most dissimilar)
 
 ### Interpreting Results
 
@@ -140,65 +253,49 @@ When you get results from similarity_search:
 - Distances around 1 suggest little to no similarity.
 - Distances approaching 2 indicate opposite meanings (rare in practice).
 
-## 本地快速测试（使用 Docker + 虚拟环境）
+## Quick Local Testing
 
-如果你想在本地验证数据库连接并快速运行示例脚本，请按下面步骤操作：
+To quickly test the system locally:
 
-1. 复制示例环境文件并填写（可选）：
+1. **Start the database**:
+   ```bash
+   docker-compose -f docker/docker-compose.yml up -d
+   ```
 
-```bash
-cp app/example.env .env
-# 若需编辑 .env：
-# vim .env
-```
+2. **Set up Python environment**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-2. 启动数据库容器（在项目根目录）：
+3. **Configure environment**:
+   ```bash
+   cp app/example.env app/.env
+   # Edit app/.env to add your Infini-AI API key
+   ```
 
-```bash
-docker-compose -f docker/docker-compose.yml up -d
-```
+4. **Test database connection**:
+   ```bash
+   python app/database/connect_postgres.py
+   ```
 
-3. 创建并激活 Python 虚拟环境（推荐使用项目内的 .venv）：
+5. **Insert vectors**:
+   ```bash
+   python app/insert_vectors.py
+   ```
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
+6. **Run similarity search**:
+   ```bash
+   python app/similarity_search.py
+   ```
 
-4. 安装依赖：
+## License
 
-```bash
-pip install -r requirements.txt
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-5. 运行连接测试脚本（脚本会优先读取 `app/example.env`，并执行一个简单查询）：
+## Acknowledgments
 
-```bash
-.venv/bin/python app/database/connect_postgres.py
-```
-
-6. 如需绕过 `.env` 直接传入 DSN 测试：
-
-```bash
-.venv/bin/python app/database/connect_postgres.py "postgresql://postgres:password@localhost:5432/postgres"
-```
-
-附加建议：
-
-- 如果你没有 `psql` 客户端，可在 macOS 上安装：
-
-```bash
-brew install libpq
-# 将 libpq 的 bin 加入 PATH（如果需要）：
-echo 'export PATH="/usr/local/opt/libpq/bin:$PATH"' >> ~/.bash_profile
-source ~/.bash_profile
-```
-
-- 如果数据库已有旧数据导致容器跳过初始化，且容器内角色/密码不匹配，可选择重建容器（会删除卷数据）：
-
-```bash
-docker-compose -f docker/docker-compose.yml down -v
-docker-compose -f docker/docker-compose.yml up -d
-```
-
-以上步骤适用于本地开发环境；生产环境请根据安全与备份需求调整配置与密码策略。
+- [Timescale](https://www.timescale.com/) for pgvectorscale
+- [Infini-AI](https://cloud.infini-ai.com) for the embedding and LLM models
+- Original tutorial by [Dave Ebbelaar](https://github.com/daveebbelaar)

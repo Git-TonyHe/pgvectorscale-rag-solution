@@ -1,14 +1,13 @@
 from datetime import datetime
-
 import pandas as pd
-from database.vector_store import VectorStore
+from app.database.vector_store import VectorStore
 from timescale_vector.client import uuid_from_time
 
 # Initialize VectorStore
 vec = VectorStore()
 
 # Read the CSV file
-df = pd.read_csv("../data/faq_dataset.csv", sep=";")
+df = pd.read_csv("data/faq_dataset.csv", sep=";")
 
 
 # Prepare data for insertion

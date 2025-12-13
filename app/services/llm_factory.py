@@ -5,7 +5,7 @@ from anthropic import Anthropic
 from openai import OpenAI
 from pydantic import BaseModel
 
-from config.settings import get_settings
+from app.config.settings import get_settings
 
 
 class LLMFactory:
@@ -16,7 +16,9 @@ class LLMFactory:
 
     def _initialize_client(self) -> Any:
         client_initializers = {
-            "openai": lambda s: instructor.from_openai(OpenAI(api_key=s.api_key)),
+            "openai": lambda s: instructor.from_openai(
+                OpenAI(api_key=s.api_key, base_url=s.base_url)
+            ),
             "anthropic": lambda s: instructor.from_anthropic(
                 Anthropic(api_key=s.api_key)
             ),

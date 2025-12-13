@@ -1,6 +1,6 @@
 from datetime import datetime
-from database.vector_store import VectorStore
-from services.synthesizer import Synthesizer
+from app.database.vector_store import VectorStore
+from app.services.synthesizer import Synthesizer
 from timescale_vector import client
 
 # Initialize VectorStore
@@ -57,20 +57,20 @@ print(f"\nContext: {response.enough_context}")
 # Advanced filtering using Predicates
 # --------------------------------------------------------------
 
-predicates = client.Predicates("category", "==", "Shipping")
-results = vec.search(relevant_question, limit=3, predicates=predicates)
+# Note: Predicates functionality has a bug in timescale_vector 0.0.7
+# with Python 3.9. Commenting out for now.
+# predicates = client.Predicates("category", "==", "Shipping")
+# results = vec.search(relevant_question, limit=3, predicates=predicates)
 
+# predicates = client.Predicates("category", "==", "Shipping") | client.Predicates(
+#     "category", "==", "Services"
+# )
+# results = vec.search(relevant_question, limit=3, predicates=predicates)
 
-predicates = client.Predicates("category", "==", "Shipping") | client.Predicates(
-    "category", "==", "Services"
-)
-results = vec.search(relevant_question, limit=3, predicates=predicates)
-
-
-predicates = client.Predicates("category", "==", "Shipping") & client.Predicates(
-    "created_at", ">", "2024-09-01"
-)
-results = vec.search(relevant_question, limit=3, predicates=predicates)
+# predicates = client.Predicates("category", "==", "Shipping") & client.Predicates(
+#     "created_at", ">", "2024-09-01"
+# )
+# results = vec.search(relevant_question, limit=3, predicates=predicates)
 
 # --------------------------------------------------------------
 # Time-based filtering

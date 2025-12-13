@@ -3,9 +3,10 @@ import time
 from typing import Any, List, Optional, Tuple, Union
 from datetime import datetime
 
+import os
 import pandas as pd
-from config.settings import get_settings
-from openai import OpenAI
+import requests
+from app.config.settings import get_settings
 from timescale_vector import client
 
 
@@ -13,10 +14,11 @@ class VectorStore:
     """A class for managing vector operations and database interactions."""
 
     def __init__(self):
-        """Initialize the VectorStore with settings, OpenAI client, and Timescale Vector client."""
+        """Initialize the VectorStore with settings and Timescale Vector client."""
         self.settings = get_settings()
-        self.openai_client = OpenAI(api_key=self.settings.openai.api_key)
         self.embedding_model = self.settings.openai.embedding_model
+        self.base_url = self.settings.openai.base_url.rstrip("/")
+        self.api_key = self.settings.openai.api_key
         self.vector_settings = self.settings.vector_store
         self.vec_client = client.Sync(
             self.settings.database.service_url,
@@ -27,7 +29,7 @@ class VectorStore:
 
     def get_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding for the given text.
+        Generate embedding for the given text using infini-ai embedding API.
 
         Args:
             text: The input text to generate an embedding for.
@@ -37,24 +39,28 @@ class VectorStore:
         """
         text = text.replace("\n", " ")
         start_time = time.time()
-        embedding = (
-            self.openai_client.embeddings.create(
-                input=[text],
-                model=self.embedding_model,
-            )
-            .data[0]
-            .embedding
-        )
+        url = f"{self.base_url}/embeddings"
+        payload = {
+            "model": self.embedding_model,
+            "input": [text]
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        embedding = response.json()["data"][0]["embedding"]
         elapsed_time = time.time() - start_time
         logging.info(f"Embedding generated in {elapsed_time:.3f} seconds")
         return embedding
 
     def create_tables(self) -> None:
-        """Create the necessary tablesin the database"""
+        """Create the necessary tables in the database"""
         self.vec_client.create_tables()
 
     def create_index(self) -> None:
-        """Create the StreamingDiskANN index to spseed up similarity search"""
+        """Create the StreamingDiskANN index to speed up similarity search"""
         self.vec_client.create_embedding_index(client.DiskAnnIndex())
 
     def drop_index(self) -> None:

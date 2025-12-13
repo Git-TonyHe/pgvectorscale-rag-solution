@@ -6,8 +6,11 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+import os
 
-load_dotenv(dotenv_path="./.env")
+# Load .env from app directory (one level up from config)
+env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path=env_path)
 
 
 def setup_logging():
@@ -26,11 +29,12 @@ class LLMSettings(BaseModel):
 
 
 class OpenAISettings(LLMSettings):
-    """OpenAI-specific settings extending LLMSettings."""
+    """Infini-AI specific settings extending LLMSettings."""
 
-    api_key: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY"))
-    default_model: str = Field(default="gpt-4o")
-    embedding_model: str = Field(default="text-embedding-3-small")
+    api_key: str = Field(default_factory=lambda: os.getenv("INFINI_API_KEY"))
+    default_model: str = Field(default="deepseek-v3.2-exp")
+    embedding_model: str = Field(default="bge-m3")
+    base_url: str = Field(default_factory=lambda: os.getenv("INFINI_BASE_URL", "https://cloud.infini-ai.com/maas/"))
 
 
 class DatabaseSettings(BaseModel):
@@ -43,7 +47,7 @@ class VectorStoreSettings(BaseModel):
     """Settings for the VectorStore."""
 
     table_name: str = "embeddings"
-    embedding_dimensions: int = 1536
+    embedding_dimensions: int = 1024  # bge-m3 produces 1024-dimensional vectors
     time_partition_interval: timedelta = timedelta(days=7)
 
 
