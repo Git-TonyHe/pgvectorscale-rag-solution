@@ -21,7 +21,7 @@ Using PostgreSQL with pgvectorscale as your vector database offers several key a
 - PostgreSQL is a robust, open-source database with a rich ecosystem of tools, drivers, and connectors. This ensures transparency, community support, and continuous improvements.
 
 - By using PostgreSQL, you can manage both your relational and vector data within a single database. This reduces operational complexity, as there's no need to maintain and synchronize multiple databases.
-
+◊◊
 - Pgvectorscale enhances pgvector with faster search capabilities, higher recall, and efficient time-based filtering. It leverages advanced indexing techniques, such as the DiskANN-inspired index, to significantly speed up Approximate Nearest Neighbor (ANN) searches.
 
 Pgvectorscale Vector builds on top of [pgvector](https://github.com/pgvector/pgvector), offering improved performance and additional features, making PostgreSQL a powerful and versatile choice for AI applications.
@@ -139,3 +139,66 @@ When you get results from similarity_search:
 - Distances closer to 0 indicate high similarity.
 - Distances around 1 suggest little to no similarity.
 - Distances approaching 2 indicate opposite meanings (rare in practice).
+
+## 本地快速测试（使用 Docker + 虚拟环境）
+
+如果你想在本地验证数据库连接并快速运行示例脚本，请按下面步骤操作：
+
+1. 复制示例环境文件并填写（可选）：
+
+```bash
+cp app/example.env .env
+# 若需编辑 .env：
+# vim .env
+```
+
+2. 启动数据库容器（在项目根目录）：
+
+```bash
+docker-compose -f docker/docker-compose.yml up -d
+```
+
+3. 创建并激活 Python 虚拟环境（推荐使用项目内的 .venv）：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+4. 安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+5. 运行连接测试脚本（脚本会优先读取 `app/example.env`，并执行一个简单查询）：
+
+```bash
+.venv/bin/python app/database/connect_postgres.py
+```
+
+6. 如需绕过 `.env` 直接传入 DSN 测试：
+
+```bash
+.venv/bin/python app/database/connect_postgres.py "postgresql://postgres:password@localhost:5432/postgres"
+```
+
+附加建议：
+
+- 如果你没有 `psql` 客户端，可在 macOS 上安装：
+
+```bash
+brew install libpq
+# 将 libpq 的 bin 加入 PATH（如果需要）：
+echo 'export PATH="/usr/local/opt/libpq/bin:$PATH"' >> ~/.bash_profile
+source ~/.bash_profile
+```
+
+- 如果数据库已有旧数据导致容器跳过初始化，且容器内角色/密码不匹配，可选择重建容器（会删除卷数据）：
+
+```bash
+docker-compose -f docker/docker-compose.yml down -v
+docker-compose -f docker/docker-compose.yml up -d
+```
+
+以上步骤适用于本地开发环境；生产环境请根据安全与备份需求调整配置与密码策略。
