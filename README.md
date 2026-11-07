@@ -40,6 +40,30 @@ Pgvectorscale Vector builds on top of [pgvector](https://github.com/pgvector/pgv
 3. Create a Python script to insert document chunks as vectors using bge-m3 embeddings
 4. Create a Python function to perform similarity search
 
+## How to Run
+
+1. **Start TimescaleDB (PostgreSQL + pgvectorscale)** via Docker Compose:
+   ```bash
+   docker-compose -f docker/docker-compose.yml up -d
+   ```
+2. **Create a virtual environment and install dependencies**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+3. **Configure environment variables** in `app/.env`:
+   ```env
+   TIMESCALE_SERVICE_URL=postgresql://postgres:password@127.0.0.1:5432/postgres
+   INFINI_API_KEY=your_infini_ai_api_key_here
+   INFINI_BASE_URL=https://cloud.infini-ai.com/maas/v1
+   ```
+4. **Ingest FAQ vectors and run RAG similarity search** (with `PYTHONPATH=.` from the repository root):
+   ```bash
+   PYTHONPATH=. python app/insert_vectors.py
+   PYTHONPATH=. python app/similarity_search.py
+   ```
+
 ## Detailed Instructions
 
 ### 1. Set up Docker environment
